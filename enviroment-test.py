@@ -7,7 +7,7 @@ import sys
 np.set_printoptions(threshold=sys.maxsize)
 SCREEN_WIDTH = 1900
 SCREEN_HEIGHT = 1000
-
+OBSTAClES_COUNT=9000
 BLOB_HEIGHT = 10
 BLOB_WIDTH = 10
 
@@ -27,6 +27,7 @@ class player:
         self.vel = vel
 
     def player_movement(self, obstacles, food,size):
+        print(grid.px_to_grid(self.x,size))
         if food[grid.px_to_grid(self.x,size)][grid.px_to_grid(self.y,size)] == 1:
             print("delicious")
             food[grid.px_to_grid(self.x,size)][grid.px_to_grid(self.y,size)] = 0
@@ -45,7 +46,7 @@ class player:
             self.x -= self.vel
 
         if keys[
-            pygame.K_RIGHT] and self.x != 500 - self.width and not obstacles[
+            pygame.K_RIGHT] and self.x != SCREEN_WIDTH - self.width and not obstacles[
             grid.px_to_grid(self.x + self.vel,size), grid.px_to_grid(
                 self.y,size)]:  # Making sure the top right corner of our character is less than the screen width - its width
             self.x += self.vel
@@ -54,7 +55,7 @@ class player:
             grid.px_to_grid(self.x,size), grid.px_to_grid(self.y - self.vel,size)]:  # Same principles apply for the y coordinate
             self.y -= self.vel
 
-        if keys[pygame.K_DOWN] and self.y != 500 - self.height and not obstacles[
+        if keys[pygame.K_DOWN] and self.y !=SCREEN_HEIGHT - self.height and not obstacles[
             grid.px_to_grid(self.x,size), grid.px_to_grid(self.y + self.vel,size)]:
             self.y += self.vel
 
@@ -62,8 +63,8 @@ class player:
 
 
 class obstacles_and_food:
-    x_start = 10
-    y_start = 10
+    x_start = int(SCREEN_WIDTH/(2*BLOB_WIDTH))
+    y_start = int(SCREEN_HEIGHT/(2*BLOB_HEIGHT))
     width = 25
     height = 25
     number_of_obstacles = 5
@@ -75,17 +76,23 @@ class obstacles_and_food:
         self.obstacles = obstacles
         self.food = food
 
+
     def invert_array(self):
-        for i in range(len(self.obstacles[0])):
-            for j in range(len(self.obstacles[0])):
+        for i in range(self.obstacles.shape[0]):
+            for j in range(self.obstacles.shape[1]):
                 self.obstacles[i][j] = not self.obstacles[i][j]
 
+    """""
+                self.generate_enviroment(BLOB_WIDTH)
+                clock.tick(60)
+                pygame.display.update()
+    """
     def generate_obstacles(self):
         X, Y = self.x_start, self.y_start
         self.obstacles[X, Y] = 1
 
         for i in range(self.number_of_obstacles):
-
+            print(i)
             neigborhoodX, neigborhoodY = self.generate_neighborhood()
             random = randint(0, len(neigborhoodX) - 1)
             X, Y = neigborhoodX[random], neigborhoodY[random]
@@ -106,13 +113,10 @@ class obstacles_and_food:
                 foodpropab = randint(0, 10)
                 if foodpropab > 10:
                     self.food[X, Y] = 1
-
-            self.generate_enviroment(BLOB_WIDTH)
-            clock.tick(60)
-            pygame.display.update()
             pygame.event.pump()
-
         self.invert_array()
+
+
 
     def generate_neighborhood(self):
 
@@ -123,7 +127,7 @@ class obstacles_and_food:
 
         #print(len(x_indexes))
         for i in range(len(x_indexes)):
-            if x_indexes[i] < len(self.obstacles[0]) - 1 and y_indexes[i] < len(self.obstacles[0]) - 1:
+            if x_indexes[i] < self.obstacles.shape[0] - 1 and y_indexes[i] < len(self.obstacles[0]) - 1:
 
                 right_neigborhood = self.obstacles[x_indexes[i] + 1, y_indexes[i]]
 
@@ -182,19 +186,21 @@ class grid:
         return x
 
     def px_to_grid(x,size):
-        X = round(x / size)
+
+        X = int(x / size)
         return X
 
 
 pygame.init()
 clock = pygame.time.Clock()
 game_grid = grid(SCREEN_WIDTH, SCREEN_HEIGHT)
-obstacles_array = np.zeros((int(game_grid.width / BLOB_WIDTH), int(game_grid.height / BLOB_HEIGHT)))
-food_array = np.zeros((int(game_grid.width / BLOB_WIDTH), int(game_grid.height / BLOB_HEIGHT)))
+obstacles_array = np.zeros((int(game_grid.width / BLOB_WIDTH)+1, int(game_grid.height / BLOB_HEIGHT)+1))
+food_array = np.zeros((int(game_grid.width / BLOB_WIDTH)+1, int(game_grid.height / BLOB_HEIGHT)+1))
+
 win = pygame.display.set_mode((game_grid.width, game_grid.height))
 pygame.display.set_caption("First Game")
-player = player(100, 100, 10, 10, 10)
-obstacles = obstacles_and_food(BLOB_WIDTH, BLOB_HEIGHT, 10000, obstacles_array, food_array)
+player = player(grid.grid_to_px((SCREEN_WIDTH/(2*BLOB_WIDTH)),BLOB_HEIGHT),grid.grid_to_px((SCREEN_HEIGHT/(2*BLOB_HEIGHT)),BLOB_HEIGHT), 10,10, 10)
+obstacles = obstacles_and_food(BLOB_WIDTH, BLOB_HEIGHT, OBSTAClES_COUNT, obstacles_array, food_array)
 obstacles.generate_obstacles()
 print(obstacles.obstacles)
 print(obstacles.obstacles.shape)
@@ -209,7 +215,7 @@ while run:
         if event.type == pygame.QUIT:
             run = False
 
-    # print(player.x,player.y)
+    print(grid.px_to_grid(player.x,BLOB_HEIGHT),grid.px_to_grid(player.y,BLOB_HEIGHT))
 
     win.fill((0, 0, 0))
     player.player_movement(obstacles.obstacles, obstacles.food,BLOB_WIDTH)
